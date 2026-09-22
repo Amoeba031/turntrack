@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" style="color-scheme: light;"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TurnTrack</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root {
+    --bg: #f2f8f9;
+    --card-bg: #ffffff;
+    --text: #0b2740;
+    --text-muted: #5c7a8a;
+    --border: #d9e6e8;
+    --accent: #00a8a6;
+    --accent-text: #ffffff;
+    --pending: #7c93a0;
+    --progress: #08517a;
+    --ready: #00a8a6;
+    --collected: #c3d2d6;
+    --overdue: #b3413a;
+    --overdue-bg: #fbe9e7;
+    --soon: #b8801f;
+    --soon-bg: #fbf1de;
+    --input-bg: #ffffff;
+    --radius: 12px;
+    --action-progress: #d9791f;
+    --action-ready: #08517a;
+    --action-complete: #2f9e44;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1b22;
+      --card-bg: #17262c;
+      --text: #e7f1f2;
+      --text-muted: #8fa8b0;
+      --border: #293a40;
+      --accent: #2bc4c1;
+      --accent-text: #06201f;
+      --pending: #7c93a0;
+      --progress: #4f9fd6;
+      --ready: #2bc4c1;
+      --collected: #3a4a4f;
+      --overdue: #e2726a;
+      --overdue-bg: #3a2422;
+      --soon: #e0b25b;
+      --soon-bg: #3a3020;
+      --input-bg: #1c2d33;
+      --action-progress: #e0973a;
+      --action-ready: #4f9fd6;
+      --action-complete: #4caf50;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1b22;
+    --card-bg: #17262c;
+    --text: #e7f1f2;
+    --text-muted: #8fa8b0;
+    --border: #293a40;
+    --accent: #2bc4c1;
+    --accent-text: #06201f;
+    --pending: #7c93a0;
+    --progress: #4f9fd6;
+    --ready: #2bc4c1;
+    --collected: #3a4a4f;
+    --overdue: #e2726a;
+    --overdue-bg: #3a2422;
+    --soon: #e0b25b;
+    --soon-bg: #3a3020;
+    --input-bg: #1c2d33;
+    --action-progress: #e0973a;
+    --action-ready: #4f9fd6;
+    --action-complete: #4caf50;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.4;
+    padding-bottom: 60px;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 20px 16px 40px; }
+  header { margin-bottom: 18px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .brand-logo { margin-bottom: 6px; display: inline-block; background: #fff; border-radius: 10px; padding: 8px 14px; }
+  .brand-logo img { height: 64px; width: auto; display: block; }
+  .sub { color: var(--text-muted); font-size: 0.92rem; margin: 0; }
+  .banner {
+    background: var(--soon-bg); color: var(--soon); border: 1px solid var(--soon);
+    border-radius: var(--radius); padding: 8px 12px; font-size: 0.85rem; margin-bottom: 14px; display: none;
+  }
+  .banner.show { display: block; }
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 1rem; margin: 0 0 12px; }
+  .grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .grid .full { grid-column: 1 / -1; }
+  label { font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
+  input, select, textarea {
+    width: 100%; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--input-bg); color: var(--text); font-size: 0.92rem; font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 44px; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .btn {
+    background: var(--accent); color: var(--accent-text); border: none; border-radius: 8px;
+    padding: 10px 16px; font-size: 0.92rem; font-weight: 600; cursor: pointer;
+  }
+  .btn:active { opacity: 0.85; }
+  .btn.secondary {
+    background: transparent; color: var(--text); border: 1px solid var(--border); font-weight: 500;
+  }
+  .btn.small { padding: 6px 10px; font-size: 0.8rem; }
+  .btn.action-progress { background: var(--action-progress); color: #fff; }
+  .btn.action-ready { background: var(--action-ready); color: #fff; }
+  .btn.action-complete { background: var(--action-complete); color: #fff; }
+  .btn.action-urgent { background: var(--overdue); color: #fff; }
+  .quick-clients { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip {
+    border: 1px solid var(--border); background: transparent; color: var(--text-muted);
+    border-radius: 999px; padding: 4px 10px; font-size: 0.78rem; cursor: pointer;
+  }
+  .chip.active { border-color: var(--accent); color: var(--accent); }
+  .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .toolbar input[type="search"] { flex: 1; min-width: 140px; }
+  .toggle-row { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--text-muted); white-space: nowrap; }
+  .stats-row { display: flex; justify-content: space-around; text-align: center; }
+  .stat-item { flex: 1; }
+  .stat-num { font-size: 1.6rem; font-weight: 800; color: var(--action-complete); }
+  .stat-label { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+  .status-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .order-card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px; margin-bottom: 10px;
+  }
+  .order-card.overdue { border-color: var(--overdue); background: var(--overdue-bg); }
+  .order-card.soon { border-color: var(--soon); background: var(--soon-bg); }
+  .order-card.collected { opacity: 0.6; }
+  .order-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .client-name { font-weight: 700; font-size: 1.02rem; margin: 0; }
+  .due-badge {
+    font-size: 0.75rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+    background: var(--collected); color: var(--text);
+  }
+  .due-badge.overdue { background: var(--overdue); color: #fff; }
+  .due-badge.soon { background: var(--soon); color: #fff; }
+  .due-badge.ontrack { background: var(--ready); color: #fff; }
+  .due-badge.done { background: var(--collected); color: var(--text); }
+  .order-meta { color: var(--text-muted); font-size: 0.85rem; margin: 6px 0 2px; }
+  .order-items { font-size: 0.92rem; margin: 4px 0; }
+  .order-notes { font-size: 0.85rem; color: var(--text-muted); font-style: italic; margin: 4px 0 0; }
+  .order-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 8px; flex-wrap: wrap; }
+  .status-pill {
+    font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; color: #fff;
+  }
+  .status-pill.pending { background: var(--pending); }
+  .status-pill.in_progress { background: var(--progress); }
+  .status-pill.ready { background: var(--ready); }
+  .status-pill.completed { background: var(--action-complete); }
+  .status-pill.collected { background: var(--collected); color: var(--text); }
+  .row-actions { display: flex; gap: 6px; }
+  .icon-btn {
+    background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.95rem;
+    padding: 4px 6px;
+  }
+  .empty-state { text-align: center; color: var(--text-muted); padding: 30px 10px; font-size: 0.9rem; }
+  .ticket-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    align-items: center; justify-content: center; z-index: 1000; padding: 16px;
+  }
+  .ticket-overlay.show { display: flex; }
+  .ticket-modal {
+    background: #fff; color: #000; border-radius: var(--radius); padding: 24px;
+    max-width: 320px; width: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .ticket-modal .t-client { font-size: 1.6rem; font-weight: 800; margin: 0 0 4px; }
+  .ticket-modal .t-due { font-size: 1.2rem; font-weight: 700; margin: 0 0 14px; padding: 6px 0; border-top: 2px dashed #000; border-bottom: 2px dashed #000; }
+  .ticket-modal .t-row { font-size: 0.95rem; margin: 6px 0; }
+  .ticket-modal .t-label { color: #555; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .ticket-modal .t-ref { margin-top: 16px; font-size: 0.8rem; color: #555; }
+  .ticket-modal-actions { display: flex; gap: 8px; margin-top: 18px; }
+  .ticket-modal-actions .btn.secondary { color: #000; }
+  @media print {
+    body > *:not(.ticket-overlay) { display: none !important; }
+    .ticket-overlay { position: static !important; background: none !important; display: block !important; padding: 0 !important; }
+    .ticket-modal { box-shadow: none !important; max-width: none !important; }
+    .ticket-modal-actions { display: none !important; }
+  }
+  .priority-row {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem;
+  }
+  .priority-row:last-child { border-bottom: none; }
+  .priority-row .pclient { font-weight: 600; }
+  .priority-row .pitems { color: var(--text-muted); font-size: 0.82rem; }
+  .priority-row .pbadge { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .priority-row .pbadge.overdue { background: var(--overdue); color: #fff; }
+  .priority-row .pbadge.soon { background: var(--soon); color: #fff; }
+  .readonly-note { font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; }
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand-logo"><img id="brandLogoImg" style="display:none;" src="data:image/png;base64,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" alt="TurnTrack"></div>
+    <p class="sub" id="brandName">TurnTrack Daily Logger by Vuka Strategies</p>
+  </header>
+
+  <div class="banner" id="statusBanner"></div>
+
+  <div class="card">
+    <h2>Log a new order</h2>
+    <form id="orderForm">
+      <div class="grid">
+        <div class="full">
+          <label for="clientInput">Client</label>
+          <input type="text" id="clientInput" list="clientList" placeholder="e.g. Riverside Apartments" required="">
+          <datalist id="clientList"></datalist>
+          <div class="quick-clients" id="quickClients"></div>
+        </div>
+        <div class="full">
+          <label for="itemsInput">What they brought</label>
+          <textarea id="itemsInput" placeholder="e.g. 3 bags bedding, 2 towel sets, 1 duvet" required=""></textarea>
+        </div>
+        <div>
+          <label for="dateInInput">Date in</label>
+          <input type="date" id="dateInInput" required="">
+        </div>
+        <div>
+          <label for="dueDateInput">Due date</label>
+          <input type="date" id="dueDateInput" required="">
+        </div>
+        <div class="full">
+          <label for="notesInput">Notes (optional)</label>
+          <input type="text" id="notesInput" placeholder="e.g. call before collecting">
+        </div>
+      </div>
+      <div style="margin-top: 12px;">
+        <button type="submit" class="btn">Add order</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="priorityPanel" class="card" style="display: none; border-color: var(--overdue);">
+    <h2 style="margin-bottom:8px;">⚠️ Needs attention today</h2>
+    <div id="priorityList"></div>
+  </div>
+
+  <div class="card" id="historyStats">
+    <h2 style="margin-bottom:10px;">Completed orders</h2>
+    <div class="stats-row">
+      <div class="stat-item"><div class="stat-num" id="statToday">0</div><div class="stat-label">Today</div></div>
+      <div class="stat-item"><div class="stat-num" id="statWeek">0</div><div class="stat-label">This week</div></div>
+      <div class="stat-item"><div class="stat-num" id="statMonth">0</div><div class="stat-label">This month</div></div>
+    </div>
+    <button id="exportTodayBtn" class="btn secondary small" style="margin-top:12px; width:100%;">⬇ Export today's orders (CSV)</button>
+  </div>
+
+  <div class="toolbar">
+    <input type="search" id="searchInput" placeholder="Search by client...">
+    <label class="toggle-row"><input type="checkbox" id="showCollected"> Show collected</label>
+  </div>
+  <div class="status-filter" id="statusFilter">
+    <button class="chip active" data-status="all">All</button>
+    <button class="chip" data-status="in_progress">In progress</button>
+    <button class="chip" data-status="completed">Completed</button>
+    <button class="chip" data-status="collected">Collected</button>
+  </div>
+
+  <div id="ordersList">
+      <div class="empty-state">No orders to show.</div>
+  </div>
+</div>
+
+<div id="printTicket" class="ticket-overlay">
+  <div class="ticket-modal">
+    <div id="ticketModalContent"></div>
+    <div class="ticket-modal-actions">
+      <button id="ticketPrintBtn" class="btn">Print</button>
+      <button id="ticketCloseBtn" class="btn secondary">Close</button>
+    </div>
+  </div>
+</div>
+
+<script id="app-data-fallback" type="application/json">{"orders":[],"clients":[]}</script>
+<script>
+(function () {
+  // ---- Supabase config ----
+  const SUPABASE_URL = 'https://ahzrlbhhnythwyxxwbgq.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoenJsYmhobnl0aHd5eHh3YmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDE3MTQsImV4cCI6MjEwNTU3NzcxNH0.voe6jbAILFDrp_aINt6E5887DNpRCdbbXGszsKwT9as';
+  const params = new URLSearchParams(window.location.search);
+  const LOCATION_SLUG = params.get('location') || 'clieveragh-965260a3';
+
+  const sb = (window.supabase && window.supabase.createClient)
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
+
+  const state = { orders: [], clients: [] };
+  let locationRow = null;
+
+  const STATUS_ORDER = ['pending', 'in_progress', 'completed', 'collected'];
+  const STATUS_LABEL = { pending: 'Pending', in_progress: 'In progress', completed: 'Completed', ready: 'Completed', collected: 'Collected' };
+
+  let filterStatus = 'all';
+  let searchTerm = '';
+  let showCollected = false;
+
+  function todayISO() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function addDays(dateStr, days) {
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + Number(days));
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function daysBetween(a, b) {
+    const d1 = new Date(a + 'T00:00:00');
+    const d2 = new Date(b + 'T00:00:00');
+    return Math.round((d2 - d1) / 86400000);
+  }
+
+  function formatDate(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  function dueBadge(order) {
+    if (order.status === 'collected') return { cls: 'done', text: 'Collected' };
+    const diff = daysBetween(todayISO(), order.dueDate);
+    if (diff < 0) return { cls: 'overdue', text: `Overdue ${Math.abs(diff)}d` };
+    if (diff === 0) return { cls: 'soon', text: 'Due today' };
+    if (diff === 1) return { cls: 'soon', text: 'Due tomorrow' };
+    return { cls: 'ontrack', text: `Due in ${diff}d` };
+  }
+
+  function cardClass(order) {
+    if (order.status === 'collected') return 'collected';
+    const diff = daysBetween(todayISO(), order.dueDate);
+    if (diff < 0) return 'overdue';
+    if (diff <= 1) return 'soon';
+    return '';
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
+  }
+
+  // ---- Map between Supabase's snake_case rows and this app's camelCase orders ----
+  function fromDb(row) {
+    return {
+      id: row.id,
+      client: row.client,
+      items: row.items,
+      notes: row.notes || '',
+      dateIn: row.date_in,
+      dueDate: row.due_date,
+      turnaroundDays: row.turnaround_days,
+      status: row.status === 'ready' ? 'completed' : row.status,
+      collectedAt: row.collected_at,
+      createdAt: row.created_at
+    };
+  }
+
+  function updateClientList() {
+    const list = document.getElementById('clientList');
+    list.innerHTML = state.clients.map(c => `<option value="${escapeHtml(c)}">`).join('');
+
+    const freq = {};
+    state.orders.forEach(o => { freq[o.client] = (freq[o.client] || 0) + 1; });
+    const top = Object.keys(freq).sort((a, b) => freq[b] - freq[a]).slice(0, 6);
+    const quick = document.getElementById('quickClients');
+    quick.innerHTML = top.map(c => `<button type="button" class="chip quick-chip" data-client="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
+    quick.querySelectorAll('.quick-chip').forEach(btn => {
+      btn.addEventListener('click', () => { document.getElementById('clientInput').value = btn.dataset.client; });
+    });
+  }
+
+  function startOfWeekLocal(d) {
+    const day = (d.getDay() + 6) % 7; // Monday = 0
+    const s = new Date(d.getFullYear(), d.getMonth(), d.getDate() - day);
+    return s;
+  }
+
+  function renderHistoryStats() {
+    const now = new Date();
+    const todayStr = todayISO();
+    const weekStart = startOfWeekLocal(now);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    let today = 0, week = 0, month = 0;
+    state.orders.forEach(o => {
+      if (o.status !== 'collected' || !o.collectedAt) return;
+      const d = new Date(o.collectedAt);
+      const dLocalStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      if (dLocalStr === todayStr) today++;
+      if (d >= weekStart) week++;
+      if (d >= monthStart) month++;
+    });
+
+    document.getElementById('statToday').textContent = today;
+    document.getElementById('statWeek').textContent = week;
+    document.getElementById('statMonth').textContent = month;
+  }
+
+  function renderPriorityPanel() {
+    const urgent = state.orders
+      .filter(o => o.status !== 'collected' && daysBetween(todayISO(), o.dueDate) <= 1)
+      .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+
+    const panel = document.getElementById('priorityPanel');
+    if (urgent.length === 0) {
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = 'block';
+    document.getElementById('priorityList').innerHTML = urgent.map(o => {
+      const badge = dueBadge(o);
+      return `
+      <div class="priority-row">
+        <div>
+          <div class="pclient">${escapeHtml(o.client)}</div>
+          <div class="pitems">${escapeHtml(o.items)}</div>
+        </div>
+        <span class="pbadge ${badge.cls}">${badge.text}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function render() {
+    updateClientList();
+    renderPriorityPanel();
+    renderHistoryStats();
+
+    let orders = state.orders.slice();
+    if (filterStatus !== 'all') {
+      orders = orders.filter(o => o.status === filterStatus);
+    } else if (!showCollected) {
+      orders = orders.filter(o => o.status !== 'collected');
+    }
+    if (searchTerm.trim()) {
+      const q = searchTerm.trim().toLowerCase();
+      orders = orders.filter(o => o.client.toLowerCase().includes(q));
+    }
+    if (filterStatus === 'collected') {
+      orders.sort((a, b) => (b.collectedAt || '').localeCompare(a.collectedAt || ''));
+    } else {
+      orders.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+    }
+
+    const list = document.getElementById('ordersList');
+    if (orders.length === 0) {
+      list.innerHTML = `<div class="empty-state">No orders to show.</div>`;
+      return;
+    }
+
+    list.innerHTML = orders.map(o => {
+      const badge = dueBadge(o);
+      const cls = cardClass(o);
+      const nextStatus = STATUS_ORDER[Math.min(STATUS_ORDER.indexOf(o.status) + 1, STATUS_ORDER.length - 1)];
+      const canAdvance = o.status !== 'collected';
+      const isUrgent = canAdvance && (badge.cls === 'overdue' || badge.cls === 'soon');
+      const actionClass = isUrgent
+        ? 'action-urgent'
+        : nextStatus === 'in_progress' ? 'action-progress'
+        : nextStatus === 'completed' ? 'action-complete' : 'action-complete';
+      return `
+      <div class="order-card ${cls}" data-id="${o.id}">
+        <div class="order-top">
+          <p class="client-name">${escapeHtml(o.client)}</p>
+          <span class="due-badge ${badge.cls}">${badge.text}</span>
+        </div>
+        <p class="order-meta">In: ${formatDate(o.dateIn)} &nbsp;→&nbsp; Due: ${formatDate(o.dueDate)} (${o.turnaroundDays}d turnaround)</p>
+        <p class="order-items">${escapeHtml(o.items)}</p>
+        ${o.notes ? `<p class="order-notes">${escapeHtml(o.notes)}</p>` : ''}
+        <div class="order-bottom">
+          <span class="status-pill ${o.status === 'ready' ? 'completed' : o.status}">${STATUS_LABEL[o.status]}</span>
+          <div class="row-actions">
+            ${canAdvance ? `<button class="btn small advance-btn ${actionClass}" data-id="${o.id}" data-next="${nextStatus}">Mark ${STATUS_LABEL[nextStatus]}</button>` : ''}
+            <button class="icon-btn ticket-btn" data-id="${o.id}" title="Print ticket">🖨</button>
+            <button class="icon-btn delete-btn" data-id="${o.id}" title="Delete">🗑</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('.advance-btn').forEach(btn => {
+      btn.addEventListener('click', () => setStatus(btn.dataset.id, btn.dataset.next));
+    });
+    list.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteOrder(btn.dataset.id));
+    });
+    list.querySelectorAll('.ticket-btn').forEach(btn => {
+      btn.addEventListener('click', () => printTicket(btn.dataset.id));
+    });
+  }
+
+  function showBanner(msg) {
+    const b = document.getElementById('statusBanner');
+    b.textContent = msg;
+    b.classList.add('show');
+    setTimeout(() => b.classList.remove('show'), 4000);
+  }
+
+  // ---- Supabase-backed actions. Local state is updated by the realtime
+  // subscription below, not by these functions directly, so every
+  // connected device converges on the same data. ----
+  async function setStatus(id, status) {
+    // The database still stores the old "ready" value for what the UI
+    // calls "Completed". Translate only when writing to Supabase.
+    const dbStatus = status === 'completed' ? 'ready' : status;
+    const order = state.orders.find(o => o.id === id);
+    if (!order) return;
+
+    const previousStatus = order.status;
+    const previousCollectedAt = order.collectedAt;
+
+    // Update the screen immediately so the next button appears without
+    // waiting for Realtime. Realtime can still confirm the change later.
+    order.status = status;
+    order.collectedAt = status === 'collected' ? new Date().toISOString() : null;
+    render();
+
+    const patch = { status: dbStatus };
+    patch.collected_at = status === 'collected' ? order.collectedAt : null;
+    const { error } = await sb.from('orders').update(patch).eq('id', id);
+
+    if (error) {
+      order.status = previousStatus;
+      order.collectedAt = previousCollectedAt;
+      render();
+      showBanner('Could not update — check your connection.');
+    }
+  }
+
+  function printTicket(id) {
+    const o = state.orders.find(x => x.id === id);
+    if (!o) return;
+    const badge = dueBadge(o);
+    const dueLabel = o.status === 'collected' ? 'Collected' : badge.text.toUpperCase();
+    document.getElementById('ticketModalContent').innerHTML = `
+      <p class="t-client">${escapeHtml(o.client)}</p>
+      <p class="t-due">${dueLabel} &mdash; ${formatDate(o.dueDate)}</p>
+      <div class="t-row"><span class="t-label">Items</span><br>${escapeHtml(o.items)}</div>
+      <div class="t-row"><span class="t-label">Dropped off</span><br>${formatDate(o.dateIn)}</div>
+      ${o.notes ? `<div class="t-row"><span class="t-label">Notes</span><br>${escapeHtml(o.notes)}</div>` : ''}
+      <p class="t-ref">Ref: ${o.id.slice(-6).toUpperCase()}</p>
+    `;
+    document.getElementById('printTicket').classList.add('show');
+  }
+
+  document.getElementById('ticketPrintBtn').addEventListener('click', () => {
+    try { window.print(); } catch (e) { /* some sandboxed views block this; the modal itself stays visible so the ticket can still be read or screenshotted */ }
+  });
+  document.getElementById('ticketCloseBtn').addEventListener('click', () => {
+    document.getElementById('printTicket').classList.remove('show');
+  });
+  document.getElementById('printTicket').addEventListener('click', (e) => {
+    if (e.target.id === 'printTicket') e.target.classList.remove('show');
+  });
+
+  async function deleteOrder(id) {
+    if (!confirm('Delete this order?')) return;
+    const { error } = await sb.from('orders').delete().eq('id', id);
+    if (error) showBanner('Could not delete — check your connection.');
+  }
+
+  document.getElementById('orderForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!locationRow) { showBanner('Still loading — try again in a moment.'); return; }
+    const client = document.getElementById('clientInput').value.trim();
+    const items = document.getElementById('itemsInput').value.trim();
+    const dateIn = document.getElementById('dateInInput').value;
+    const dueDate = document.getElementById('dueDateInput').value;
+    const notes = document.getElementById('notesInput').value.trim();
+    if (!client || !items || !dateIn || !dueDate) return;
+
+    const newOrder = {
+      location_id: locationRow.id,
+      client, items,
+      notes: notes || null,
+      date_in: dateIn,
+      due_date: dueDate,
+      turnaround_days: Math.max(0, daysBetween(dateIn, dueDate)),
+      status: 'pending'
+    };
+
+    e.target.reset();
+    document.getElementById('dateInInput').value = todayISO();
+    document.getElementById('dueDateInput').value = addDays(todayISO(), 4);
+
+    const { error } = await sb.from('orders').insert(newOrder);
+    if (error) showBanner('Could not save order — check your connection.');
+  });
+
+  document.getElementById('dateInInput').addEventListener('change', () => {
+    const dateIn = document.getElementById('dateInInput').value;
+    const dueInput = document.getElementById('dueDateInput');
+    if (dateIn && (!dueInput.value || dueInput.value < dateIn)) {
+      dueInput.value = addDays(dateIn, 4);
+    }
+  });
+
+  document.getElementById('searchInput').addEventListener('input', e => { searchTerm = e.target.value; render(); });
+  document.getElementById('showCollected').addEventListener('change', e => { showCollected = e.target.checked; render(); });
+  document.getElementById('statusFilter').addEventListener('click', e => {
+    const btn = e.target.closest('.chip');
+    if (!btn) return;
+    filterStatus = btn.dataset.status;
+    document.querySelectorAll('#statusFilter .chip').forEach(c => c.classList.toggle('active', c === btn));
+    render();
+  });
+
+  function csvField(v) {
+    const s = String(v ?? '');
+    if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function exportTodayCSV() {
+    const todayStr = todayISO();
+    const rows = state.orders.filter(o => {
+      const loggedToday = o.dateIn === todayStr;
+      const stillOpen = o.status !== 'collected';
+      let collectedToday = false;
+      if (o.collectedAt) {
+        const d = new Date(o.collectedAt);
+        const dStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        collectedToday = dStr === todayStr;
+      }
+      return loggedToday || collectedToday || stillOpen;
+    });
+
+    if (rows.length === 0) {
+      showBanner('No orders to export today.');
+      return;
+    }
+
+    const header = ['Client', 'Items', 'Date In', 'Due Date', 'Turnaround (days)', 'Status', 'Collected At', 'Notes'];
+    const lines = [header.map(csvField).join(',')];
+    rows.forEach(o => {
+      lines.push([
+        o.client, o.items, o.dateIn, o.dueDate, o.turnaroundDays, STATUS_LABEL[o.status],
+        o.collectedAt ? formatDate(o.collectedAt.slice(0, 10)) : '', o.notes || ''
+      ].map(csvField).join(','));
+    });
+    const csv = '\ufeff' + lines.join('\r\n');
+
+    // Plain browser download — works anywhere this page is hosted, no
+    // special capability needed.
+    const slug = (locationRow && locationRow.business_name ? locationRow.business_name : 'turntrack')
+      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${slug}-orders-${todayStr}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  document.getElementById('exportTodayBtn').addEventListener('click', exportTodayCSV);
+
+  document.getElementById('dateInInput').value = todayISO();
+  document.getElementById('dueDateInput').value = addDays(todayISO(), 4);
+
+  // ---- Load this location's branding and apply it ----
+  async function loadLocation() {
+    const { data, error } = await sb.from('locations').select('*').eq('slug', LOCATION_SLUG).single();
+    if (error || !data) {
+      document.getElementById('ordersList').innerHTML = `<div class="empty-state">Could not load this location. Check the link.</div>`;
+      showBanner('Could not load this location.');
+      return;
+    }
+    locationRow = data;
+    document.title = `TurnTrack for ${data.business_name}`;
+    document.getElementById('brandName').textContent = `TurnTrack Daily Logger by Vuka Strategies`;
+    const logo = document.getElementById('brandLogoImg');
+    if (data.logo_data_url) {
+      logo.src = data.logo_data_url;
+      logo.alt = data.business_name;
+      logo.style.display = '';
+    }
+    const root = document.documentElement.style;
+    if (data.color_accent) {
+      root.setProperty('--accent', data.color_accent);
+      root.setProperty('--ready', data.color_accent);
+    }
+    if (data.color_progress) {
+      root.setProperty('--progress', data.color_progress);
+    }
+  }
+
+  async function loadOrders() {
+    const { data, error } = await sb.from('orders').select('*').eq('location_id', locationRow.id);
+    if (error) {
+      showBanner('Could not load orders — check your connection.');
+      return;
+    }
+    state.orders = data.map(fromDb);
+    state.clients = [...new Set(state.orders.map(o => o.client))];
+    render();
+  }
+
+  function subscribeRealtime() {
+    sb.channel('orders-' + locationRow.id)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'orders',
+        filter: `location_id=eq.${locationRow.id}`
+      }, payload => {
+        if (payload.eventType === 'INSERT') {
+          if (!state.orders.find(o => o.id === payload.new.id)) {
+            state.orders.push(fromDb(payload.new));
+            if (!state.clients.includes(payload.new.client)) state.clients.push(payload.new.client);
+          }
+        } else if (payload.eventType === 'UPDATE') {
+          const idx = state.orders.findIndex(o => o.id === payload.new.id);
+          if (idx >= 0) state.orders[idx] = fromDb(payload.new);
+        } else if (payload.eventType === 'DELETE') {
+          state.orders = state.orders.filter(o => o.id !== payload.old.id);
+        }
+        render();
+      })
+      .subscribe();
+  }
+
+  async function init() {
+    if (!sb) {
+      document.getElementById('ordersList').innerHTML = `<div class="empty-state">Could not connect — check your internet connection and reload.</div>`;
+      return;
+    }
+    document.getElementById('ordersList').innerHTML = `<div class="empty-state">Loading…</div>`;
+    await loadLocation();
+    if (!locationRow) return;
+    await loadOrders();
+    subscribeRealtime();
+  }
+  init();
+})();
+</script>
+
+
+
+</body></html>
