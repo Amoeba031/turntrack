@@ -1,285 +1,407 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light" style="color-scheme: light;"><head>
+<html lang="en">
+<head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TurnTrack</title>
+<script>
+(function () {
+  var t = null;
+  try { t = localStorage.getItem('turntrack-theme'); } catch (e) {}
+  if (!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root {
-    --bg: #f2f8f9;
-    --card-bg: #ffffff;
-    --text: #0b2740;
-    --text-muted: #5c7a8a;
-    --border: #d9e6e8;
-    --accent: #00a8a6;
-    --accent-text: #ffffff;
-    --pending: #7c93a0;
-    --progress: #08517a;
-    --ready: #00a8a6;
-    --collected: #c3d2d6;
-    --overdue: #b3413a;
-    --overdue-bg: #fbe9e7;
-    --soon: #b8801f;
-    --soon-bg: #fbf1de;
-    --input-bg: #ffffff;
-    --radius: 12px;
-    --action-progress: #d9791f;
-    --action-ready: #08517a;
-    --action-complete: #2f9e44;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #0e1b22;
-      --card-bg: #17262c;
-      --text: #e7f1f2;
-      --text-muted: #8fa8b0;
-      --border: #293a40;
-      --accent: #2bc4c1;
-      --accent-text: #06201f;
-      --pending: #7c93a0;
-      --progress: #4f9fd6;
-      --ready: #2bc4c1;
-      --collected: #3a4a4f;
-      --overdue: #e2726a;
-      --overdue-bg: #3a2422;
-      --soon: #e0b25b;
-      --soon-bg: #3a3020;
-      --input-bg: #1c2d33;
-      --action-progress: #e0973a;
-      --action-ready: #4f9fd6;
-      --action-complete: #4caf50;
-    }
+    --page-bg: #0C2638;
+    --sheet-bg: #FBFAF7;
+    --card-bg: #FFFFFF;
+    --ink: #0B2740;
+    --ink-soft: #52697A;
+    --muted: #93A6B0;
+    --border: #E7E4DC;
+    --teal: #16B3A8;
+    --teal-ink: #06302C;
+    --navy: #0B3A5B;
+    --rail-ink-dim: #7391A0;
+    --danger-fg: #B13434; --danger-bg: #FBEAEA; --danger-glow: rgba(177,52,52,.22);
+    --soon-fg: #9A6A12; --soon-bg: #FDF3E3; --soon-glow: rgba(154,106,18,.22);
+    --ok-fg: #0E7A67; --ok-bg: #E7F6F2;
+    --pending-bg: #EFEDE6; --pending-fg: #52697A;
+    --progress-bg: rgba(22,179,168,.16); --progress-fg: #0C8A80;
+    --ready-bg: rgba(11,58,91,.12); --ready-fg: #0B3A5B;
+    --collected-bg: #E7E4DC; --collected-fg: #93A6B0;
+    --shadow-card: 0 1px 0 rgba(255,255,255,.9) inset, 0 1px 2px rgba(11,39,64,.05), 0 14px 30px rgba(11,39,64,.08);
+    --hover: rgba(11,39,64,.03);
+    color-scheme: light;
   }
   :root[data-theme="dark"] {
-    --bg: #0e1b22;
-    --card-bg: #17262c;
-    --text: #e7f1f2;
-    --text-muted: #8fa8b0;
-    --border: #293a40;
-    --accent: #2bc4c1;
-    --accent-text: #06201f;
-    --pending: #7c93a0;
-    --progress: #4f9fd6;
-    --ready: #2bc4c1;
-    --collected: #3a4a4f;
-    --overdue: #e2726a;
-    --overdue-bg: #3a2422;
-    --soon: #e0b25b;
-    --soon-bg: #3a3020;
-    --input-bg: #1c2d33;
-    --action-progress: #e0973a;
-    --action-ready: #4f9fd6;
-    --action-complete: #4caf50;
+    --page-bg: #070F16; --sheet-bg: #0F1D27; --card-bg: #162834;
+    --ink: #EAF2F4; --ink-soft: #B9CAD2; --muted: #7E97A1; --border: #223640;
+    --teal: #33C9BF; --teal-ink: #06302C; --navy: #8FC7E8;
+    --danger-bg: #3A1E1E; --danger-fg: #F2A6A6; --danger-glow: rgba(242,102,123,.28);
+    --soon-bg: #3A2E13; --soon-fg: #F2CE86; --soon-glow: rgba(242,184,75,.26);
+    --ok-bg: #12332C; --ok-fg: #7FE0C9;
+    --pending-bg: #223640; --pending-fg: #B9CAD2;
+    --progress-bg: rgba(51,201,191,.18); --progress-fg: #6FE3DA;
+    --ready-bg: rgba(143,199,232,.14); --ready-fg: #8FC7E8;
+    --collected-bg: #1C2D33; --collected-fg: #7E97A1;
+    --shadow-card: 0 1px 0 rgba(255,255,255,.06) inset, 0 1px 2px rgba(0,0,0,.4), 0 14px 30px rgba(0,0,0,.45);
+    --hover: rgba(255,255,255,.04);
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    line-height: 1.4;
-    padding-bottom: 60px;
+  html, body {
+    margin: 0; padding: 0; background: var(--page-bg); color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    font-feature-settings: "tnum";
   }
-  .wrap { max-width: 780px; margin: 0 auto; padding: 20px 16px 40px; }
-  header { margin-bottom: 18px; }
-  h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -0.01em; }
-  .brand-logo { margin-bottom: 6px; display: inline-block; background: #fff; border-radius: 10px; padding: 8px 14px; }
-  .brand-logo img { height: 64px; width: auto; display: block; }
-  .sub { color: var(--text-muted); font-size: 0.92rem; margin: 0; }
-  .banner {
-    background: var(--soon-bg); color: var(--soon); border: 1px solid var(--soon);
-    border-radius: var(--radius); padding: 8px 12px; font-size: 0.85rem; margin-bottom: 14px; display: none;
-  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  button, input, textarea { font-family: inherit; }
+
+  .app { display: flex; min-height: 100vh; }
+
+  /* ---- Left rail ---- */
+  .rail { width: 216px; flex-shrink: 0; padding: 1.3rem 0.9rem; display: flex; flex-direction: column; gap: 1.9rem; position: relative; }
+  .rail::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 28px; background: linear-gradient(90deg, transparent, rgba(0,0,0,.22)); pointer-events: none; }
+  .rail-brand { display: flex; align-items: center; gap: 10px; padding: 0 0.4rem; }
+  .rail-mark { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, #1fd0c3, #0c8a80); display: flex; align-items: center; justify-content: center; color: var(--teal-ink); font-size: 15px; overflow: hidden; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255,255,255,.18) inset, 0 6px 16px rgba(22,179,168,.4); }
+  .rail-mark img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+  .rail-brand-text p { margin: 0; }
+  .rail-name { color: #fff; font-weight: 600; font-size: 13px; letter-spacing: -0.01em; font-family: 'Inter Tight', sans-serif; }
+  .rail-sub { color: var(--rail-ink-dim); font-size: 10.5px; margin-top: 1px !important; }
+  .rail-nav { display: flex; flex-direction: column; gap: 1px; }
+  .rail-link { display: flex; align-items: center; gap: 10px; padding: 7.5px 10px; border-radius: 7px; color: var(--rail-ink-dim); font-size: 12.5px; font-weight: 500; border: none; background: transparent; width: 100%; text-align: left; cursor: pointer; }
+  .rail-link.active { background: linear-gradient(90deg, rgba(22,179,168,.22), rgba(255,255,255,.04)); box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset; color: #fff; }
+  .rail-link.active i { color: #3fe3d6; }
+  .rail-link.disabled { opacity: .55; }
+  .rail-link i { font-size: 15px; width: 15px; text-align: center; }
+  .rail-soon { margin-left: auto; font-size: 9.5px; font-weight: 700; letter-spacing: .02em; color: var(--rail-ink-dim); }
+  .rail-divider { height: 1px; background: rgba(255,255,255,.08); margin: 0 0.4rem; }
+  .rail-foot { margin-top: auto; padding: 0 0.4rem; }
+  .rail-foot p { margin: 0; color: var(--rail-ink-dim); font-size: 10.5px; }
+
+  /* ---- Main column ---- */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+  .chrome { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.6rem; color: #fff; gap: 12px; }
+  .search-box { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.07); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 9px; padding: 7px 12px; width: 240px; max-width: 40vw; color: var(--rail-ink-dim); font-size: 12.5px; }
+  .search-box input { background: transparent; border: none; outline: none; color: #fff; font-size: 12.5px; width: 100%; }
+  .search-box input::placeholder { color: var(--rail-ink-dim); }
+  .chrome-right { display: flex; align-items: center; gap: 16px; }
+  .bell { color: var(--rail-ink-dim); font-size: 17px; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: #1C3B52; color: #cfe3ea; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+
+  .sheet { flex: 1; background: var(--sheet-bg); border-radius: 20px 20px 0 0; padding: 1.6rem 1.9rem 2.4rem; box-shadow: 0 -10px 40px rgba(0,0,0,.25); transition: background .3s; }
+
+  .topline { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.2rem; gap: 12px; flex-wrap: wrap; }
+  .page-title { font-family: 'Inter Tight', sans-serif; font-size: 20px; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
+  .page-sub { font-size: 12.5px; color: var(--muted); margin: 3px 0 0; }
+  .add-btn { display: flex; align-items: center; gap: 7px; background: linear-gradient(135deg, #12b9ad, #0b6f9a); color: #fff; border: none; font-size: 13px; font-weight: 600; padding: 10px 16px; border-radius: 10px; cursor: pointer; box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 8px 20px rgba(18,185,173,.35); transition: transform .15s, box-shadow .15s; }
+  .add-btn:hover { transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, 0 12px 24px rgba(18,185,173,.42); }
+  .add-btn:active { transform: translateY(0) scale(.98); }
+
+  .banner { background: var(--soon-bg); color: var(--soon-fg); border-radius: 9px; padding: 9px 13px; font-size: 0.85rem; margin-bottom: 14px; display: none; }
   .banner.show { display: block; }
-  .card {
-    background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 16px; margin-bottom: 16px;
-  }
-  .card h2 { font-size: 1rem; margin: 0 0 12px; }
-  .grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-  }
+
+  .stat-strip { display: flex; align-items: center; gap: 26px; padding: 0 0 1.1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); }
+  .stat-chip p { margin: 0; }
+  .stat-chip .v { font-family: 'Inter Tight', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  .stat-chip .l { font-size: 11px; color: var(--muted); font-weight: 500; }
+  .export-btn { margin-left: auto; display: flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--border); color: var(--ink-soft); font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: 8px; cursor: pointer; }
+  .export-btn:hover { background: var(--hover); }
+
+  .priority-banner { display: none; background: var(--danger-bg); border: 1px solid var(--danger-glow); border-radius: 14px; padding: 11px 15px; margin-bottom: 1.3rem; box-shadow: 0 0 24px var(--danger-glow); }
+  .priority-banner-head { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--danger-fg); margin-bottom: 6px; }
+  .priority-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 5px 0; font-size: 12.5px; }
+  .priority-row .pclient { font-weight: 600; }
+  .priority-row .pitems { color: var(--ink-soft); font-size: 11.5px; }
+  .priority-row .pbadge { font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+  .priority-row .pbadge.overdue { background: linear-gradient(135deg, #d04a4a, #a42f2f); color: #fff; box-shadow: 0 0 12px var(--danger-glow); }
+  .priority-row .pbadge.soon { background: linear-gradient(135deg, #d29a2a, #9a6a12); color: #fff; box-shadow: 0 0 12px var(--soon-glow); }
+
+  .filters-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.9rem; gap: 10px; flex-wrap: wrap; }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 12px; padding: 5px 11px; border-radius: 7px; border: 1px solid var(--border); background: transparent; color: var(--ink-soft); font-weight: 500; cursor: pointer; }
+  .chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .show-collected-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 560px; }
+  thead th { text-align: left; font-size: 10.5px; font-weight: 600; color: var(--muted); letter-spacing: .01em; padding: 0 10px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tbody td { padding: 11px 10px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+  tbody tr { transition: background .15s; }
+  tbody tr:hover { background: var(--hover); }
+  tbody tr.row-overdue { background: rgba(177,52,52,.04); }
+  tbody tr.row-soon { background: rgba(154,106,18,.04); }
+  tbody tr.row-collected { opacity: .55; }
+  .client-cell .name { font-weight: 600; margin: 0; }
+  .client-cell .items { font-size: 12px; color: var(--ink-soft); margin: 2px 0 0; }
+  .client-cell .row-notes { font-size: 11.5px; color: var(--muted); font-style: italic; margin: 2px 0 0; }
+  .mono { font-feature-settings: "tnum"; color: var(--ink-soft); font-size: 12.5px; white-space: nowrap; }
+  .turnaround { color: var(--muted); }
+
+  .badge { font-size: 11px; font-weight: 600; padding: 4px 9px 4px 7px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .badge::before { content: ""; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+  .badge.overdue { background: var(--danger-bg); color: var(--danger-fg); }
+  .badge.overdue::before { background: var(--danger-fg); }
+  .badge.soon { background: var(--soon-bg); color: var(--soon-fg); }
+  .badge.soon::before { background: var(--soon-fg); }
+  .badge.ontrack { background: var(--ok-bg); color: var(--ok-fg); }
+  .badge.ontrack::before { background: var(--ok-fg); }
+  .badge.done { background: var(--collected-bg); color: var(--collected-fg); }
+  .badge.done::before { background: var(--collected-fg); }
+  .badge.overdue { box-shadow: 0 0 10px var(--danger-glow); }
+  .badge.soon { box-shadow: 0 0 10px var(--soon-glow); }
+
+  .status-pill { font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px; border: none; cursor: pointer; white-space: nowrap; background: var(--pending-bg); color: var(--pending-fg); transition: transform .12s; }
+  .status-pill:active:not(:disabled) { transform: scale(.92); }
+  .status-pill.in_progress { background: var(--progress-bg); color: var(--progress-fg); box-shadow: 0 0 10px rgba(22,179,168,.2); }
+  .status-pill.ready { background: var(--ready-bg); color: var(--ready-fg); }
+  .status-pill.collected { background: var(--collected-bg); color: var(--collected-fg); cursor: default; }
+  .status-pill.urgent { background: var(--danger-fg) !important; color: #fff !important; }
+  .status-pill:disabled { cursor: default; }
+
+  .row-actions { display: flex; gap: 5px; justify-content: flex-end; }
+  .icon-btn { width: 27px; height: 27px; border-radius: 7px; border: 1px solid var(--border); background: var(--card-bg); color: var(--ink-soft); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; }
+  .icon-btn:hover { background: var(--hover); }
+  .right { text-align: right; }
+  .empty-state { text-align: center; color: var(--muted); padding: 30px 10px; font-size: 13px; }
+
+  /* ---- Add-order modal ---- */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(5,14,22,.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+  .modal-overlay.show { display: flex; }
+  .modal-card { background: var(--card-bg); color: var(--ink); border: 1px solid var(--border); border-radius: 18px; padding: 1.4rem 1.5rem; max-width: 420px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 30px 70px rgba(0,0,0,.45); animation: modalUp .3s cubic-bezier(.2,.8,.2,1); }
+  @keyframes modalUp { from { opacity: 0; transform: translateY(24px) scale(.98); } to { opacity: 1; transform: none; } }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .modal-head h2 { font-family: 'Inter Tight', sans-serif; font-size: 16px; margin: 0; letter-spacing: -0.01em; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .grid .full { grid-column: 1 / -1; }
-  label { font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
+  label { font-size: 11.5px; color: var(--ink-soft); display: block; margin-bottom: 4px; font-weight: 500; }
   input, select, textarea {
-    width: 100%; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--input-bg); color: var(--text); font-size: 0.92rem; font-family: inherit;
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--card-bg); color: var(--ink); font-size: 13px;
   }
   textarea { resize: vertical; min-height: 44px; }
-  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .btn {
-    background: var(--accent); color: var(--accent-text); border: none; border-radius: 8px;
-    padding: 10px 16px; font-size: 0.92rem; font-weight: 600; cursor: pointer;
-  }
-  .btn:active { opacity: 0.85; }
-  .btn.secondary {
-    background: transparent; color: var(--text); border: 1px solid var(--border); font-weight: 500;
-  }
-  .btn.small { padding: 6px 10px; font-size: 0.8rem; }
-  .btn.action-progress { background: var(--action-progress); color: #fff; }
-  .btn.action-ready { background: var(--action-ready); color: #fff; }
-  .btn.action-complete { background: var(--action-complete); color: #fff; }
-  .btn.action-urgent { background: var(--overdue); color: #fff; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
   .quick-clients { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-  .chip {
-    border: 1px solid var(--border); background: transparent; color: var(--text-muted);
-    border-radius: 999px; padding: 4px 10px; font-size: 0.78rem; cursor: pointer;
-  }
-  .chip.active { border-color: var(--accent); color: var(--accent); }
-  .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
-  .toolbar input[type="search"] { flex: 1; min-width: 140px; }
-  .toggle-row { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--text-muted); white-space: nowrap; }
-  .stats-row { display: flex; justify-content: space-around; text-align: center; }
-  .stat-item { flex: 1; }
-  .stat-num { font-size: 1.6rem; font-weight: 800; color: var(--action-complete); }
-  .stat-label { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
-  .status-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
-  .order-card {
-    background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 14px; margin-bottom: 10px;
-  }
-  .order-card.overdue { border-color: var(--overdue); background: var(--overdue-bg); }
-  .order-card.soon { border-color: var(--soon); background: var(--soon-bg); }
-  .order-card.collected { opacity: 0.6; }
-  .order-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-  .client-name { font-weight: 700; font-size: 1.02rem; margin: 0; }
-  .due-badge {
-    font-size: 0.75rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap;
-    background: var(--collected); color: var(--text);
-  }
-  .due-badge.overdue { background: var(--overdue); color: #fff; }
-  .due-badge.soon { background: var(--soon); color: #fff; }
-  .due-badge.ontrack { background: var(--ready); color: #fff; }
-  .due-badge.done { background: var(--collected); color: var(--text); }
-  .order-meta { color: var(--text-muted); font-size: 0.85rem; margin: 6px 0 2px; }
-  .order-items { font-size: 0.92rem; margin: 4px 0; }
-  .order-notes { font-size: 0.85rem; color: var(--text-muted); font-style: italic; margin: 4px 0 0; }
-  .order-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; gap: 8px; flex-wrap: wrap; }
-  .status-pill {
-    font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; color: #fff;
-  }
-  .status-pill.pending { background: var(--pending); }
-  .status-pill.in_progress { background: var(--progress); }
-  .status-pill.ready { background: var(--ready); }
-  .status-pill.completed { background: var(--action-complete); }
-  .status-pill.collected { background: var(--collected); color: var(--text); }
-  .row-actions { display: flex; gap: 6px; }
-  .icon-btn {
-    background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.95rem;
-    padding: 4px 6px;
-  }
-  .empty-state { text-align: center; color: var(--text-muted); padding: 30px 10px; font-size: 0.9rem; }
-  .ticket-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55);
-    align-items: center; justify-content: center; z-index: 1000; padding: 16px;
-  }
+  .btn { background: linear-gradient(135deg, #12b9ad, #0b6f9a); color: #fff; border: none; border-radius: 10px; padding: 11px 16px; font-size: 13px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 4px; box-shadow: 0 1px 0 rgba(255,255,255,.3) inset, 0 8px 18px rgba(18,185,173,.3); }
+  .btn.secondary { background: transparent; color: var(--ink); border: 1px solid var(--border); font-weight: 500; box-shadow: none; }
+
+  /* ---- Print ticket modal (kept simple/print-safe) ---- */
+  .ticket-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
   .ticket-overlay.show { display: flex; }
-  .ticket-modal {
-    background: #fff; color: #000; border-radius: var(--radius); padding: 24px;
-    max-width: 320px; width: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  }
-  .ticket-modal .t-client { font-size: 1.6rem; font-weight: 800; margin: 0 0 4px; }
-  .ticket-modal .t-due { font-size: 1.2rem; font-weight: 700; margin: 0 0 14px; padding: 6px 0; border-top: 2px dashed #000; border-bottom: 2px dashed #000; }
+  .ticket-modal { background: #fff; color: #000; border-radius: 14px; padding: 24px; max-width: 320px; width: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .ticket-modal .t-client { font-size: 1.5rem; font-weight: 800; margin: 0 0 4px; }
+  .ticket-modal .t-due { font-size: 1.1rem; font-weight: 700; margin: 0 0 14px; padding: 6px 0; border-top: 2px dashed #000; border-bottom: 2px dashed #000; }
   .ticket-modal .t-row { font-size: 0.95rem; margin: 6px 0; }
-  .ticket-modal .t-label { color: #555; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
-  .ticket-modal .t-ref { margin-top: 16px; font-size: 0.8rem; color: #555; }
+  .ticket-modal .t-label { color: #555; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .ticket-modal .t-ref { margin-top: 16px; font-size: 0.78rem; color: #555; }
   .ticket-modal-actions { display: flex; gap: 8px; margin-top: 18px; }
-  .ticket-modal-actions .btn.secondary { color: #000; }
+  .ticket-modal-actions .btn { width: auto; flex: 1; }
   @media print {
     body > *:not(.ticket-overlay) { display: none !important; }
     .ticket-overlay { position: static !important; background: none !important; display: block !important; padding: 0 !important; }
+    .ticket-overlay { position: static !important; }
     .ticket-modal { box-shadow: none !important; max-width: none !important; }
     .ticket-modal-actions { display: none !important; }
   }
-  .priority-row {
-    display: flex; justify-content: space-between; align-items: center; gap: 10px;
-    padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem;
-  }
-  .priority-row:last-child { border-bottom: none; }
-  .priority-row .pclient { font-weight: 600; }
-  .priority-row .pitems { color: var(--text-muted); font-size: 0.82rem; }
-  .priority-row .pbadge { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
-  .priority-row .pbadge.overdue { background: var(--overdue); color: #fff; }
-  .priority-row .pbadge.soon { background: var(--soon); color: #fff; }
-  .readonly-note { font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; }
-  @media (max-width: 480px) {
-    .grid { grid-template-columns: 1fr; }
+
+  /* ---- Dashboard view ---- */
+  .hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 1.5rem; }
+  .hero-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.1rem 1.25rem; box-shadow: var(--shadow-card); position: relative; overflow: hidden; transition: background .3s; }
+  .hero-card::before { content: ""; position: absolute; top: 0; left: 18px; right: 18px; height: 2px; border-radius: 0 0 4px 4px; background: linear-gradient(90deg, transparent, var(--teal), transparent); opacity: .85; }
+  .hero-card .l { font-size: 12px; color: var(--muted); margin: 0 0 6px; font-weight: 500; }
+  .hero-card .v { font-family: 'Inter Tight', sans-serif; font-size: 32px; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+
+  .dash-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; box-shadow: var(--shadow-card); transition: background .3s; }
+  .panel-title { font-size: 13px; font-weight: 600; color: var(--ink-soft); margin: 0 0 12px; }
+
+  .activity-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .activity-row:last-child { border-bottom: none; }
+  .aclient { font-size: 13px; font-weight: 600; margin: 0; }
+  .aitems { font-size: 11.5px; color: var(--ink-soft); margin: 2px 0 0; }
+  .activity-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .atime { font-size: 10.5px; color: var(--muted); }
+
+  .trend-chart { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; height: 110px; padding-top: 10px; }
+  .trend-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+  .trend-bar-wrap { height: 64px; display: flex; align-items: flex-end; }
+  .trend-bar { width: 17px; border-radius: 6px 6px 2px 2px; background: linear-gradient(180deg, #3fe3d6, #12a69b 70%, #0b6f9a); box-shadow: 0 0 14px rgba(22,179,168,.35); height: var(--h); min-height: 4px; }
+  .trend-chart.animate .trend-bar { height: 0; animation: barGrow .9s cubic-bezier(.2,.8,.2,1) forwards; }
+  @keyframes barGrow { to { height: var(--h); } }
+  #dashboardView, #ordersView { animation: viewIn .3s ease; }
+  @keyframes viewIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* ---- Theme toggle ---- */
+  .theme-toggle { width: 52px; height: 28px; border-radius: 999px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.12); position: relative; cursor: pointer; padding: 0; flex-shrink: 0; }
+  .theme-toggle .knob { position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #fff, #cfe3ea); display: flex; align-items: center; justify-content: center; font-size: 12px; color: #0b2740; transition: transform .25s cubic-bezier(.3,.7,.2,1); box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+  :root[data-theme="dark"] .theme-toggle .knob { transform: translateX(24px); background: linear-gradient(135deg, #33c9bf, #1a8f87); color: #04302c; }
+  @media (prefers-reduced-motion: reduce) { .trend-chart.animate .trend-bar, .modal-card, #dashboardView, #ordersView { animation: none; } }
+  .trend-count { font-size: 11px; font-weight: 600; margin: 0; color: var(--ink-soft); }
+  .trend-label { font-size: 10px; color: var(--muted); margin: 0; }
+
+  .quick-add-card { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--ink); color: #fff; border-radius: 14px; padding: 1rem 1.2rem; margin-bottom: 1rem; }
+  .quick-add-card p { margin: 0; font-size: 13px; }
+  .quick-add-card .add-btn { background: var(--teal); color: var(--teal-ink); }
+
+  @media (max-width: 760px) {
+    .rail { display: none; }
+    .search-box { width: 160px; }
+    .sheet { padding: 1.2rem 1rem 2rem; border-radius: 14px 14px 0 0; }
+    .chrome { padding: 0.8rem 1rem; }
   }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="brand-logo"><img id="brandLogoImg" style="display:none;" src="data:image/png;base64,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" alt="TurnTrack"></div>
-    <p class="sub" id="brandName">TurnTrack Daily Logger by Vuka Strategies</p>
-  </header>
+<div class="app">
 
-  <div class="banner" id="statusBanner"></div>
+  <div class="rail">
+    <div class="rail-brand">
+      <div class="rail-mark"><img id="brandLogoImg" style="display:none;" alt=""></div>
+      <div class="rail-brand-text">
+        <p class="rail-name" id="brandName">TurnTrack</p>
+        <p class="rail-sub" id="brandSub">Loading…</p>
+      </div>
+    </div>
+    <div class="rail-nav">
+      <button type="button" class="rail-link active" id="navDashboard"><i class="ti ti-layout-dashboard" aria-hidden="true"></i> Dashboard</button>
+      <button type="button" class="rail-link" id="navOrders"><i class="ti ti-list" aria-hidden="true"></i> Orders</button>
+      <div class="rail-link disabled"><i class="ti ti-chart-bar" aria-hidden="true"></i> History <span class="rail-soon">SOON</span></div>
+      <div class="rail-link disabled"><i class="ti ti-settings" aria-hidden="true"></i> Settings <span class="rail-soon">SOON</span></div>
+    </div>
+    <div class="rail-divider"></div>
+    <div class="rail-foot"><p>by Vuka Strategies</p></div>
+  </div>
 
-  <div class="card">
-    <h2>Log a new order</h2>
+  <div class="main">
+    <div class="chrome">
+      <div class="search-box"><i class="ti ti-search" aria-hidden="true"></i><input type="search" id="searchInput" placeholder="Search orders…"></div>
+      <div class="chrome-right">
+        <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"><span class="knob" id="themeKnob"><i class="ti ti-sun" aria-hidden="true"></i></span></button>
+        <div class="bell"><i class="ti ti-bell" aria-hidden="true"></i></div>
+        <div class="avatar" id="avatarInitials">TT</div>
+      </div>
+    </div>
+
+    <div class="sheet">
+      <div class="topline">
+        <div>
+          <p class="page-title" id="pageTitle">Dashboard</p>
+          <p class="page-sub" id="topCounts">Loading…</p>
+        </div>
+        <button class="add-btn" id="addOrderBtn"><i class="ti ti-plus" aria-hidden="true"></i> Add order</button>
+      </div>
+
+      <div class="banner" id="statusBanner"></div>
+
+      <!-- ================= Dashboard view ================= -->
+      <div id="dashboardView">
+        <div class="hero-stats">
+          <div class="hero-card"><p class="l">Collected today</p><p class="v" id="statToday">0</p></div>
+          <div class="hero-card"><p class="l">This week</p><p class="v" id="statWeek">0</p></div>
+          <div class="hero-card"><p class="l">This month</p><p class="v" id="statMonth">0</p></div>
+        </div>
+
+        <div id="priorityPanel" class="priority-banner">
+          <div class="priority-banner-head"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Needs attention today</div>
+          <div id="priorityList"></div>
+        </div>
+
+        <div class="dash-grid">
+          <div class="panel">
+            <p class="panel-title">Recent activity</p>
+            <div id="recentActivity"></div>
+          </div>
+          <div class="panel">
+            <p class="panel-title">Collected, last 7 days</p>
+            <div class="trend-chart" id="trendChart"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= Orders view ================= -->
+      <div id="ordersView" style="display:none;">
+        <div class="filters-row">
+          <div class="filters" id="statusFilter">
+            <button class="chip active" data-status="all">All</button>
+            <button class="chip" data-status="pending">Pending</button>
+            <button class="chip" data-status="in_progress">In progress</button>
+            <button class="chip" data-status="ready">Ready</button>
+            <button class="chip" data-status="collected">Collected</button>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px;">
+            <label class="show-collected-toggle"><input type="checkbox" id="showCollected"> Show collected</label>
+            <button class="export-btn" id="exportTodayBtn"><i class="ti ti-download" aria-hidden="true"></i> Export CSV</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Client</th><th>In</th><th>Due</th><th>Status</th><th>Due date</th><th class="right">Actions</th></tr>
+            </thead>
+            <tbody id="ordersList">
+              <tr><td colspan="6" class="empty-state">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Add order modal -->
+<div id="addOrderModal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 id="orderModalTitle">Log a new order</h2>
+      <button type="button" id="addOrderCloseBtn" class="icon-btn" aria-label="Close" style="width:auto; padding:4px 9px; font-size:16px;">×</button>
+    </div>
     <form id="orderForm">
       <div class="grid">
         <div class="full">
           <label for="clientInput">Client</label>
-          <input type="text" id="clientInput" list="clientList" placeholder="e.g. Riverside Apartments" required="">
+          <input type="text" id="clientInput" list="clientList" placeholder="e.g. Riverside Apartments" required>
           <datalist id="clientList"></datalist>
           <div class="quick-clients" id="quickClients"></div>
         </div>
         <div class="full">
           <label for="itemsInput">What they brought</label>
-          <textarea id="itemsInput" placeholder="e.g. 3 bags bedding, 2 towel sets, 1 duvet" required=""></textarea>
+          <textarea id="itemsInput" placeholder="e.g. 3 bags bedding, 2 towel sets, 1 duvet" required></textarea>
         </div>
         <div>
           <label for="dateInInput">Date in</label>
-          <input type="date" id="dateInInput" required="">
+          <input type="date" id="dateInInput" required>
         </div>
         <div>
           <label for="dueDateInput">Due date</label>
-          <input type="date" id="dueDateInput" required="">
+          <input type="date" id="dueDateInput" required>
         </div>
         <div class="full">
           <label for="notesInput">Notes (optional)</label>
           <input type="text" id="notesInput" placeholder="e.g. call before collecting">
         </div>
       </div>
-      <div style="margin-top: 12px;">
-        <button type="submit" class="btn">Add order</button>
-      </div>
+      <button type="submit" class="btn" id="orderSubmitBtn">Add order</button>
     </form>
-  </div>
-
-  <div id="priorityPanel" class="card" style="display: none; border-color: var(--overdue);">
-    <h2 style="margin-bottom:8px;">⚠️ Needs attention today</h2>
-    <div id="priorityList"></div>
-  </div>
-
-  <div class="card" id="historyStats">
-    <h2 style="margin-bottom:10px;">Completed orders</h2>
-    <div class="stats-row">
-      <div class="stat-item"><div class="stat-num" id="statToday">0</div><div class="stat-label">Today</div></div>
-      <div class="stat-item"><div class="stat-num" id="statWeek">0</div><div class="stat-label">This week</div></div>
-      <div class="stat-item"><div class="stat-num" id="statMonth">0</div><div class="stat-label">This month</div></div>
-    </div>
-    <button id="exportTodayBtn" class="btn secondary small" style="margin-top:12px; width:100%;">⬇ Export today's orders (CSV)</button>
-  </div>
-
-  <div class="toolbar">
-    <input type="search" id="searchInput" placeholder="Search by client...">
-    <label class="toggle-row"><input type="checkbox" id="showCollected"> Show collected</label>
-  </div>
-  <div class="status-filter" id="statusFilter">
-    <button class="chip active" data-status="all">All</button>
-    <button class="chip" data-status="in_progress">In progress</button>
-    <button class="chip" data-status="completed">Completed</button>
-    <button class="chip" data-status="collected">Collected</button>
-  </div>
-
-  <div id="ordersList">
-      <div class="empty-state">No orders to show.</div>
   </div>
 </div>
 
+<!-- Printable pickup ticket -->
 <div id="printTicket" class="ticket-overlay">
   <div class="ticket-modal">
     <div id="ticketModalContent"></div>
@@ -290,7 +412,6 @@
   </div>
 </div>
 
-<script id="app-data-fallback" type="application/json">{"orders":[],"clients":[]}</script>
 <script>
 (function () {
   // ---- Supabase config ----
@@ -306,8 +427,8 @@
   const state = { orders: [], clients: [] };
   let locationRow = null;
 
-  const STATUS_ORDER = ['pending', 'in_progress', 'completed', 'collected'];
-  const STATUS_LABEL = { pending: 'Pending', in_progress: 'In progress', completed: 'Completed', ready: 'Completed', collected: 'Collected' };
+  const STATUS_ORDER = ['pending', 'in_progress', 'ready', 'collected'];
+  const STATUS_LABEL = { pending: 'Pending', in_progress: 'In progress', ready: 'Ready', collected: 'Collected' };
 
   let filterStatus = 'all';
   let searchTerm = '';
@@ -335,6 +456,11 @@
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
+  function formatLongDate(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+
   function dueBadge(order) {
     if (order.status === 'collected') return { cls: 'done', text: 'Collected' };
     const diff = daysBetween(todayISO(), order.dueDate);
@@ -344,16 +470,36 @@
     return { cls: 'ontrack', text: `Due in ${diff}d` };
   }
 
-  function cardClass(order) {
-    if (order.status === 'collected') return 'collected';
-    const diff = daysBetween(todayISO(), order.dueDate);
-    if (diff < 0) return 'overdue';
-    if (diff <= 1) return 'soon';
+  function rowClass(order, badge) {
+    if (order.status === 'collected') return 'row-collected';
+    if (badge.cls === 'overdue') return 'row-overdue';
+    if (badge.cls === 'soon') return 'row-soon';
     return '';
   }
 
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
+  }
+
+  function relativeTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const diffMin = Math.round((Date.now() - d.getTime()) / 60000);
+    if (diffMin < 1) return 'Just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffH = Math.round(diffMin / 60);
+    if (diffH < 24) return `${diffH}h ago`;
+    const diffD = Math.round(diffH / 24);
+    if (diffD === 1) return 'Yesterday';
+    if (diffD < 7) return `${diffD}d ago`;
+    return formatDate(iso.slice(0, 10));
+  }
+
+  function initialsFrom(name) {
+    const words = String(name || 'TurnTrack').trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return 'TT';
+    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+    return (words[0][0] + words[1][0]).toUpperCase();
   }
 
   // ---- Map between Supabase's snake_case rows and this app's camelCase orders ----
@@ -366,7 +512,7 @@
       dateIn: row.date_in,
       dueDate: row.due_date,
       turnaroundDays: row.turnaround_days,
-      status: row.status === 'ready' ? 'completed' : row.status,
+      status: row.status,
       collectedAt: row.collected_at,
       createdAt: row.created_at
     };
@@ -408,9 +554,11 @@
       if (d >= monthStart) month++;
     });
 
-    document.getElementById('statToday').textContent = today;
-    document.getElementById('statWeek').textContent = week;
-    document.getElementById('statMonth').textContent = month;
+    [['statToday', today], ['statWeek', week], ['statMonth', month]].forEach(([id, n]) => {
+      const el = document.getElementById(id);
+      el.dataset.value = n;
+      el.textContent = n;
+    });
   }
 
   function renderPriorityPanel() {
@@ -429,18 +577,126 @@
       return `
       <div class="priority-row">
         <div>
-          <div class="pclient">${escapeHtml(o.client)}</div>
-          <div class="pitems">${escapeHtml(o.items)}</div>
+          <span class="pclient">${escapeHtml(o.client)}</span>
+          &nbsp;·&nbsp;
+          <span class="pitems">${escapeHtml(o.items)}</span>
         </div>
         <span class="pbadge ${badge.cls}">${badge.text}</span>
       </div>`;
     }).join('');
   }
 
+  function updateTopCounts() {
+    const active = state.orders.filter(o => o.status !== 'collected').length;
+    const urgent = state.orders.filter(o => o.status !== 'collected' && daysBetween(todayISO(), o.dueDate) <= 1).length;
+    const dateStr = formatLongDate(todayISO());
+    const parts = [dateStr, `${active} active`];
+    if (urgent > 0) parts.push(`${urgent} need${urgent === 1 ? 's' : ''} attention`);
+    document.getElementById('topCounts').textContent = parts.join(' \u00B7 ');
+  }
+
+  // ---- Light / dark theme toggle ----
+  const themeKnob = document.getElementById('themeKnob');
+  function syncKnob() {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    themeKnob.innerHTML = dark ? '<i class="ti ti-moon" aria-hidden="true"></i>' : '<i class="ti ti-sun" aria-hidden="true"></i>';
+  }
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('turntrack-theme', next); } catch (e) {}
+    syncKnob();
+  });
+  syncKnob();
+
+  // ---- Dashboard intro animation (count-up numbers, growing bars) ----
+  function playDashboardIntro() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const chart = document.getElementById('trendChart');
+    chart.classList.remove('animate');
+    void chart.offsetWidth;
+    chart.classList.add('animate');
+    ['statToday', 'statWeek', 'statMonth'].forEach(id => {
+      const el = document.getElementById(id);
+      let start = null;
+      function step(ts) {
+        if (start === null) start = ts;
+        const p = Math.min((ts - start) / 800, 1);
+        const target = Number(el.dataset.value || 0);
+        el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  // ---- Dashboard/Orders routing ----
+  let currentPage = 'dashboard';
+  function showPage(page) {
+    currentPage = page;
+    document.getElementById('dashboardView').style.display = page === 'dashboard' ? '' : 'none';
+    document.getElementById('ordersView').style.display = page === 'orders' ? '' : 'none';
+    document.getElementById('navDashboard').classList.toggle('active', page === 'dashboard');
+    document.getElementById('navOrders').classList.toggle('active', page === 'orders');
+    document.getElementById('pageTitle').textContent = page === 'dashboard' ? 'Dashboard' : 'Orders';
+    if (page === 'dashboard') playDashboardIntro();
+  }
+  document.getElementById('navDashboard').addEventListener('click', () => showPage('dashboard'));
+  document.getElementById('navOrders').addEventListener('click', () => showPage('orders'));
+
+  function renderRecentActivity() {
+    const recent = state.orders.slice()
+      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+      .slice(0, 6);
+    const el = document.getElementById('recentActivity');
+    if (recent.length === 0) {
+      el.innerHTML = `<p class="empty-state" style="padding:10px 0;">No activity yet.</p>`;
+      return;
+    }
+    el.innerHTML = recent.map(o => `
+      <div class="activity-row">
+        <div>
+          <p class="aclient">${escapeHtml(o.client)}</p>
+          <p class="aitems">${escapeHtml(o.items)}</p>
+        </div>
+        <div class="activity-right">
+          <span class="status-pill ${o.status}" style="cursor:default;" disabled>${STATUS_LABEL[o.status]}</span>
+          <span class="atime">${relativeTime(o.createdAt)}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderTrend() {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      days.push({ key, label: d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 2), count: 0 });
+    }
+    state.orders.forEach(o => {
+      if (!o.collectedAt) return;
+      const d = new Date(o.collectedAt);
+      const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const day = days.find(x => x.key === key);
+      if (day) day.count++;
+    });
+    const max = Math.max(1, ...days.map(d => d.count));
+    document.getElementById('trendChart').innerHTML = days.map((d, i) => `
+      <div class="trend-col">
+        <div class="trend-bar-wrap"><div class="trend-bar" style="--h:${Math.max(4, (d.count / max) * 64)}px;animation-delay:${i * 0.05}s"></div></div>
+        <p class="trend-count">${d.count}</p>
+        <p class="trend-label">${d.label}</p>
+      </div>`).join('');
+  }
+
   function render() {
     updateClientList();
     renderPriorityPanel();
     renderHistoryStats();
+    renderRecentActivity();
+    renderTrend();
+    updateTopCounts();
 
     let orders = state.orders.slice();
     if (filterStatus !== 'all') {
@@ -458,49 +714,56 @@
       orders.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
     }
 
-    const list = document.getElementById('ordersList');
+    const tbody = document.getElementById('ordersList');
     if (orders.length === 0) {
-      list.innerHTML = `<div class="empty-state">No orders to show.</div>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No orders to show.</td></tr>`;
       return;
     }
 
-    list.innerHTML = orders.map(o => {
+    tbody.innerHTML = orders.map(o => {
       const badge = dueBadge(o);
-      const cls = cardClass(o);
+      const rcls = rowClass(o, badge);
       const nextStatus = STATUS_ORDER[Math.min(STATUS_ORDER.indexOf(o.status) + 1, STATUS_ORDER.length - 1)];
       const canAdvance = o.status !== 'collected';
       const isUrgent = canAdvance && (badge.cls === 'overdue' || badge.cls === 'soon');
-      const actionClass = isUrgent
-        ? 'action-urgent'
-        : nextStatus === 'in_progress' ? 'action-progress'
-        : nextStatus === 'completed' ? 'action-complete' : 'action-complete';
+      const pillClass = `status-pill ${o.status}${isUrgent ? ' urgent' : ''}`;
+      const advanceAttrs = canAdvance
+        ? `data-id="${o.id}" data-next="${nextStatus}" title="Click to mark ${STATUS_LABEL[nextStatus]}"`
+        : 'disabled';
       return `
-      <div class="order-card ${cls}" data-id="${o.id}">
-        <div class="order-top">
-          <p class="client-name">${escapeHtml(o.client)}</p>
-          <span class="due-badge ${badge.cls}">${badge.text}</span>
-        </div>
-        <p class="order-meta">In: ${formatDate(o.dateIn)} &nbsp;→&nbsp; Due: ${formatDate(o.dueDate)} (${o.turnaroundDays}d turnaround)</p>
-        <p class="order-items">${escapeHtml(o.items)}</p>
-        ${o.notes ? `<p class="order-notes">${escapeHtml(o.notes)}</p>` : ''}
-        <div class="order-bottom">
-          <span class="status-pill ${o.status === 'ready' ? 'completed' : o.status}">${STATUS_LABEL[o.status]}</span>
+      <tr class="${rcls}">
+        <td class="client-cell">
+          <p class="name">${escapeHtml(o.client)}</p>
+          <p class="items">${escapeHtml(o.items)}</p>
+          ${o.notes ? `<p class="row-notes">${escapeHtml(o.notes)}</p>` : ''}
+        </td>
+        <td class="mono">${formatDate(o.dateIn)}</td>
+        <td class="mono">${formatDate(o.dueDate)} <span class="turnaround">(${o.turnaroundDays}d)</span></td>
+        <td><button type="button" class="${pillClass}" ${advanceAttrs}>${STATUS_LABEL[o.status]}</button></td>
+        <td><span class="badge ${badge.cls}">${badge.text}</span></td>
+        <td class="right">
           <div class="row-actions">
-            ${canAdvance ? `<button class="btn small advance-btn ${actionClass}" data-id="${o.id}" data-next="${nextStatus}">Mark ${STATUS_LABEL[nextStatus]}</button>` : ''}
-            <button class="icon-btn ticket-btn" data-id="${o.id}" title="Print ticket">🖨</button>
-            <button class="icon-btn delete-btn" data-id="${o.id}" title="Delete">🗑</button>
+            <button class="icon-btn edit-btn" data-id="${o.id}" title="Edit order" aria-label="Edit order"><i class="ti ti-pencil" aria-hidden="true"></i></button>
+            <button class="icon-btn ticket-btn" data-id="${o.id}" title="Print ticket" aria-label="Print ticket"><i class="ti ti-printer" aria-hidden="true"></i></button>
+            <button class="icon-btn delete-btn" data-id="${o.id}" title="Delete" aria-label="Delete order"><i class="ti ti-trash" aria-hidden="true"></i></button>
           </div>
-        </div>
-      </div>`;
+        </td>
+      </tr>`;
     }).join('');
 
-    list.querySelectorAll('.advance-btn').forEach(btn => {
+    tbody.querySelectorAll('.status-pill[data-id]').forEach(btn => {
       btn.addEventListener('click', () => setStatus(btn.dataset.id, btn.dataset.next));
     });
-    list.querySelectorAll('.delete-btn').forEach(btn => {
+    tbody.querySelectorAll('.delete-btn').forEach(btn => {
       btn.addEventListener('click', () => deleteOrder(btn.dataset.id));
     });
-    list.querySelectorAll('.ticket-btn').forEach(btn => {
+    tbody.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const o = state.orders.find(x => x.id === btn.dataset.id);
+        if (o) openOrderModal(o);
+      });
+    });
+    tbody.querySelectorAll('.ticket-btn').forEach(btn => {
       btn.addEventListener('click', () => printTicket(btn.dataset.id));
     });
   }
@@ -515,32 +778,23 @@
   // ---- Supabase-backed actions. Local state is updated by the realtime
   // subscription below, not by these functions directly, so every
   // connected device converges on the same data. ----
-  async function setStatus(id, status) {
-    // The database still stores the old "ready" value for what the UI
-    // calls "Completed". Translate only when writing to Supabase.
-    const dbStatus = status === 'completed' ? 'ready' : status;
-    const order = state.orders.find(o => o.id === id);
-    if (!order) return;
-
-    const previousStatus = order.status;
-    const previousCollectedAt = order.collectedAt;
-
-    // Update the screen immediately so the next button appears without
-    // waiting for Realtime. Realtime can still confirm the change later.
-    order.status = status;
-    order.collectedAt = status === 'collected' ? new Date().toISOString() : null;
+  // Merge a row returned by Supabase straight into local state so the UI
+  // updates instantly (the realtime feed then just confirms it).
+  function applyRow(row) {
+    if (!row) return;
+    const o = fromDb(row);
+    const idx = state.orders.findIndex(x => x.id === o.id);
+    if (idx >= 0) state.orders[idx] = o; else state.orders.push(o);
+    if (!state.clients.includes(o.client)) state.clients.push(o.client);
     render();
+  }
 
-    const patch = { status: dbStatus };
-    patch.collected_at = status === 'collected' ? order.collectedAt : null;
-    const { error } = await sb.from('orders').update(patch).eq('id', id);
-
-    if (error) {
-      order.status = previousStatus;
-      order.collectedAt = previousCollectedAt;
-      render();
-      showBanner('Could not update — check your connection.');
-    }
+  async function setStatus(id, status) {
+    const patch = { status };
+    patch.collected_at = status === 'collected' ? new Date().toISOString() : null;
+    const { data, error } = await sb.from('orders').update(patch).eq('id', id).select();
+    if (error) { showBanner('Could not update — check your connection.'); return; }
+    applyRow(data && data[0]);
   }
 
   function printTicket(id) {
@@ -572,8 +826,44 @@
   async function deleteOrder(id) {
     if (!confirm('Delete this order?')) return;
     const { error } = await sb.from('orders').delete().eq('id', id);
-    if (error) showBanner('Could not delete — check your connection.');
+    if (error) { showBanner('Could not delete — check your connection.'); return; }
+    state.orders = state.orders.filter(o => o.id !== id);
+    render();
   }
+
+  // ---- Add-order modal open/close ----
+  const addOrderModal = document.getElementById('addOrderModal');
+  let editingId = null;
+
+  function openOrderModal(order) {
+    if (order) {
+      editingId = order.id;
+      document.getElementById('clientInput').value = order.client;
+      document.getElementById('itemsInput').value = order.items;
+      document.getElementById('dateInInput').value = order.dateIn;
+      document.getElementById('dueDateInput').value = order.dueDate;
+      document.getElementById('notesInput').value = order.notes || '';
+      document.getElementById('orderModalTitle').textContent = 'Edit order';
+      document.getElementById('orderSubmitBtn').textContent = 'Save changes';
+    } else {
+      editingId = null;
+      document.getElementById('orderForm').reset();
+      document.getElementById('dateInInput').value = todayISO();
+      document.getElementById('dueDateInput').value = addDays(todayISO(), 4);
+      document.getElementById('orderModalTitle').textContent = 'Log a new order';
+      document.getElementById('orderSubmitBtn').textContent = 'Add order';
+    }
+    addOrderModal.classList.add('show');
+  }
+
+  function closeOrderModal() {
+    addOrderModal.classList.remove('show');
+    editingId = null;
+  }
+
+  document.getElementById('addOrderBtn').addEventListener('click', () => openOrderModal(null));
+  document.getElementById('addOrderCloseBtn').addEventListener('click', closeOrderModal);
+  addOrderModal.addEventListener('click', (e) => { if (e.target === addOrderModal) closeOrderModal(); });
 
   document.getElementById('orderForm').addEventListener('submit', async function (e) {
     e.preventDefault();
@@ -585,22 +875,26 @@
     const notes = document.getElementById('notesInput').value.trim();
     if (!client || !items || !dateIn || !dueDate) return;
 
-    const newOrder = {
-      location_id: locationRow.id,
+    const fields = {
       client, items,
       notes: notes || null,
       date_in: dateIn,
       due_date: dueDate,
-      turnaround_days: Math.max(0, daysBetween(dateIn, dueDate)),
-      status: 'pending'
+      turnaround_days: Math.max(0, daysBetween(dateIn, dueDate))
     };
+    const idToEdit = editingId;
+    closeOrderModal();
 
-    e.target.reset();
-    document.getElementById('dateInInput').value = todayISO();
-    document.getElementById('dueDateInput').value = addDays(todayISO(), 4);
-
-    const { error } = await sb.from('orders').insert(newOrder);
-    if (error) showBanner('Could not save order — check your connection.');
+    if (idToEdit) {
+      const { data, error } = await sb.from('orders').update(fields).eq('id', idToEdit).select();
+      if (error) { showBanner('Could not save changes — check your connection.'); return; }
+      applyRow(data && data[0]);
+    } else {
+      const { data, error } = await sb.from('orders')
+        .insert({ ...fields, location_id: locationRow.id, status: 'pending' }).select();
+      if (error) { showBanner('Could not save order — check your connection.'); return; }
+      applyRow(data && data[0]);
+    }
   });
 
   document.getElementById('dateInInput').addEventListener('change', () => {
@@ -611,7 +905,11 @@
     }
   });
 
-  document.getElementById('searchInput').addEventListener('input', e => { searchTerm = e.target.value; render(); });
+  document.getElementById('searchInput').addEventListener('input', e => {
+    searchTerm = e.target.value;
+    if (searchTerm.trim() && currentPage !== 'orders') showPage('orders');
+    render();
+  });
   document.getElementById('showCollected').addEventListener('change', e => { showCollected = e.target.checked; render(); });
   document.getElementById('statusFilter').addEventListener('click', e => {
     const btn = e.target.closest('.chip');
@@ -656,8 +954,6 @@
     });
     const csv = '\ufeff' + lines.join('\r\n');
 
-    // Plain browser download — works anywhere this page is hosted, no
-    // special capability needed.
     const slug = (locationRow && locationRow.business_name ? locationRow.business_name : 'turntrack')
       .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -680,13 +976,15 @@
   async function loadLocation() {
     const { data, error } = await sb.from('locations').select('*').eq('slug', LOCATION_SLUG).single();
     if (error || !data) {
-      document.getElementById('ordersList').innerHTML = `<div class="empty-state">Could not load this location. Check the link.</div>`;
+      document.getElementById('ordersList').innerHTML = `<tr><td colspan="6" class="empty-state">Could not load this location. Check the link.</td></tr>`;
       showBanner('Could not load this location.');
       return;
     }
     locationRow = data;
     document.title = `TurnTrack for ${data.business_name}`;
-    document.getElementById('brandName').textContent = `TurnTrack Daily Logger by Vuka Strategies`;
+    document.getElementById('brandName').textContent = 'TurnTrack';
+    document.getElementById('brandSub').textContent = data.business_name;
+    document.getElementById('avatarInitials').textContent = initialsFrom(data.business_name);
     const logo = document.getElementById('brandLogoImg');
     if (data.logo_data_url) {
       logo.src = data.logo_data_url;
@@ -694,13 +992,8 @@
       logo.style.display = '';
     }
     const root = document.documentElement.style;
-    if (data.color_accent) {
-      root.setProperty('--accent', data.color_accent);
-      root.setProperty('--ready', data.color_accent);
-    }
-    if (data.color_progress) {
-      root.setProperty('--progress', data.color_progress);
-    }
+    if (data.color_accent) root.setProperty('--teal', data.color_accent);
+    if (data.color_progress) root.setProperty('--navy', data.color_progress);
   }
 
   async function loadOrders() {
@@ -712,6 +1005,7 @@
     state.orders = data.map(fromDb);
     state.clients = [...new Set(state.orders.map(o => o.client))];
     render();
+    playDashboardIntro();
   }
 
   function subscribeRealtime() {
@@ -738,10 +1032,9 @@
 
   async function init() {
     if (!sb) {
-      document.getElementById('ordersList').innerHTML = `<div class="empty-state">Could not connect — check your internet connection and reload.</div>`;
+      document.getElementById('ordersList').innerHTML = `<tr><td colspan="6" class="empty-state">Could not connect — check your internet connection and reload.</td></tr>`;
       return;
     }
-    document.getElementById('ordersList').innerHTML = `<div class="empty-state">Loading…</div>`;
     await loadLocation();
     if (!locationRow) return;
     await loadOrders();
@@ -749,8 +1042,7 @@
   }
   init();
 })();
+
 </script>
-
-
-
-</body></html>
+</body>
+</html>
